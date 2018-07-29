@@ -42,20 +42,26 @@ struct VRecord {
 		id[0] = 0;
 	}
 	VRecord(const char* vID) {
-		strcpy_s(id, vID);
+		strcpy(id, vID);
 	}
 	VRecord(VRecord& vR) : timestamp(vR.timestamp),
 		x(vR.x), y(vR.y) {
-		strcpy_s(id, vR.id);
+		strcpy(id, vR.id);
 	}
 	VRecord(VRecord&& vR) : timestamp(vR.timestamp),
 		x(vR.x), y(vR.y) {
-		strcpy_s(id, vR.id);
+		strcpy(id, vR.id);
 	}
 
 	bool operator==(VRecord& b) {
 		return  strcmp(id, b.id) == 0 &&
 			timestamp == b.timestamp;
+	}
+	void operator=(VRecord& b) {
+		x = b.x;
+		y = b.y;
+		timestamp = b.timestamp;
+		strcpy(id, b.id);
 	}
 };
 

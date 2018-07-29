@@ -8,11 +8,11 @@
 * =========================================================================================
 */
 
-//#include "stdafx.h"
 #ifndef A01_LISTLIB_H
 #define A01_LISTLIB_H
 
 #include <string>
+
 using namespace std;
 
 class DSAException {
@@ -40,111 +40,60 @@ struct L1Item {
 
 template <class T>
 class L1List {
-	L1Item<T>   *_pHead;// The head pointer of linked list
-	size_t      _size;// number of elements in this list
 public:
-	L1List() : _pHead(NULL), _size(0) {}
-	L1List(T input) : _pHead(new L1Item<T>(input)), _size(0) {}
+	L1Item<T>   *_pHead, *pCur;// The head pointer of linked list
+	size_t      _size;// number of elements in this list
+
+	L1List() : _pHead(NULL), pCur(NULL), _size(0) {}
 	~L1List() {
 		clean();
-	}
+	};
 
-	void    clean( ) {	
-		if(_pHead == NULL)
-			return;
-		L1Item<T>* p = _pHead;
-		while (p != NULL) {
-			_pHead = _pHead->pNext;
-			delete p;
-			p = _pHead;
-		} 
-		_size = 0;
-	}
-
-	bool    isEmpty() { 
+	void    clean();
+	bool    isEmpty() {
 		return _pHead == NULL;
 	}
 	size_t  getSize() {
 		return _size;
 	}
 
-	T&      at(int i){
-		return operator[](i);
+	//custom function
+	bool      storeCurrent(T& ret) {
+		if (this->pCur == NULL) {
+			return false;
+		}
+		else {
+			T temp = this->pCur->data;
+			memcpy(&ret, &temp, sizeof(T));
+			this->pCur = this->pCur->pNext;
+			return true;
+		}
 	}
+	void initCur() { this->pCur = this->_pHead; }
+	void resetCur() { this->pCur = this->_pHead; }
+	//T*      find(T& a, std::function<int(*eqCmp) (T&, T&)> eqCmp);
+	T& find(T& a, int(*eqCmp) (T&, T&));
+
+	T&      at(int i);
+	T&      operator[](int i);
+
+	bool    find(T& a, int& idx);
+	int     insert(int i, T& a);
+	int     remove(int i);
 	
-	T& operator[](int i) {
-		int tmp = 0; 
-		//if (i > this->_size) return NULL;
-		L1Item<T> *p= _pHead;
-		if ((p)&&(tmp<i)) {
-			p = p->pNext; 
-			tmp++;
-		}
-		return p->data;
-	}
-	
-	bool    find(T& a, int& idx) {
-		L1Item<T> *p = a;
-		while (!isEmpty()) {
-			if (p->data == idx)
-				return true;
-		 	p = p->pNext;
-		}
-		return false;
-	}
-
-	int     insert(int i, T& a) {
-		if (isEmpty() || i <= 0) {
-			insertHead(a);
-			return 0;
-		}
-		L1Item<T>* prev = _pHead;
-		L1Item<T>* next = NULL;
-		for (int count = 0; count < i - 1 && prev->pNext != NULL; prev = prev->pNext, count++);
-		next = prev->pNext;
-		prev->pNext = new L1Item<T>(a);
-		prev->pNext->pNext = next;
-		return 0;
-	}
-
-	int     remove(int i) {
-		if (!(isEmpty()) && (i > 0) && (i < (int)_size)) {
-			L1Item<T>* p = _pHead;
-			L1Item<T>* ptr=NULL;
-			for (int count = 0; count < i - 1; count++)
-				p = p->pNext;
-			ptr = ptr->pNext;
-			p->pNext = ptr->pNext;
-			delete ptr;
-			return 0;
-		}
-		else return -1;
-	}
-
-	int     push_back(T& a); //done
-	int     insertHead(T& a); //done
+	int     push_back(T& a);
+	int     insertHead(T& a);
 	int     insertHead() {
 		_pHead = new L1Item<T>(_pHead);
 		_size++;
 		return 0;
 	}
 
-	int     removeHead(); //done
-	int     removeLast(); //done
+	int     removeHead();
+	int     removeLast();
 
-	void    reverse() {
-		if (isEmpty())
-			return;
-		L1Item<T>* p = NULL;
-		L1Item<T>* ptr;
-		while (_pHead != NULL) {
-			ptr = _pHead;
-			_pHead = _pHead->pNext;
-			ptr->pNext = p;
-			p = ptr;
-		}
-		_pHead = p;
-	}
+	void    reverse();
+
 	void    traverse(void(*op)(T&)) {
 		L1Item<T>   *p = _pHead;
 		while (p) {
@@ -152,24 +101,6 @@ public:
 			p = p->pNext;
 		}
 	}
-	void    traverse(void(*op)(T&, void*), void* pParam) {
-		L1Item<T>   *p = _pHead;
-		while (p) {
-			op(p->data, pParam);
-			p = p->pNext;
-		}
-	}
-	//  3 versions of traverse() 
-	//     2 of them loop to the end of recList
-	//     1 of them halt by the time finding out
-	void        traverse(void(*op)(L1Item<T>*&)) {
-		L1Item<T>   *p = _pHead;
-		while (p) {
-			op(p);
-			p = p->pNext;
-		}
-	}
-
 	L1Item<T>*  traverse1(bool(*op)(T&, void*), void* pParam) {
 		L1Item<T>   *p = _pHead;
 		while (p) {
@@ -178,17 +109,65 @@ public:
 		}
 		return NULL;
 	}
-
-	void        traverse(void(*op)(T&, void*, size_t&), void* param) {
+	void    traverse(void(*op)(T&, void*), void* pParam) {
 		L1Item<T>   *p = _pHead;
-		size_t      position = 0;
 		while (p) {
-			op(p->data, param, position);
+			op(p->data, pParam);
 			p = p->pNext;
-			position++;
 		}
 	}
 
+	T* _find(T&a, bool & found, int(*eqcmp)(T&, T&)) {
+		L1Item<T> * current = this->_pHead;
+		while (current) {
+			if (eqCmp(a, current->data) == 0) {
+				found = true;
+				return &current->data;
+			}
+			current = current->pNext;
+		}
+		found = false;
+	}
+	bool find(T&a, T*ret, int(*eqcmp)(T&, T&)) {
+		L1Item<T> * current = this->_pHead;
+		while (current) {
+			if (eqCmp(a, current->data) == 0) {
+				memcpy(ret, &current->data, sizeof(current->data));
+				return true;
+			}
+			current = current->pNext;
+		}
+		return false;
+	}
+
+	bool _remove1(T& a, int(*eqCmp)(T&, T&)) {
+		if (eqCmp(a, this->_pHead->data) == 0) {
+			L1Item<T> * current = this->_pHead;
+			this->_pHead = this->_pHead->pNext;
+			this->_size--;
+			delete current;
+			return true;
+		}
+		else {
+			L1Item<T> * current = this->_pHead;
+			L1Item<T> * preCurrent = NULL;
+			this->_size--;
+			while (current) {
+				if (eqCmp(a, current->data) == 0) {
+					break;
+				}
+				preCurrent = current;
+				current = current->pNext;
+			}
+			if (current) {
+				preCurrent->pNext = current->pNext;
+				current = NULL;
+			}
+			else 
+				return false;
+		}
+		return true;
+	}
 };
 
 /// Insert item to the end of the list
@@ -203,10 +182,20 @@ int L1List<T>::push_back(T &a) {
 		while (p->pNext) p = p->pNext;
 		p->pNext = new L1Item<T>(a);
 	}
-
 	_size++;
 	return 0;
 }
+template <class T>
+T& L1List<T>::find(T& a, int(*eqCmp)(T&, T&)) {
+	L1Item<T> * current = this->_pHead;
+	while (current) {
+		if (eqCmp(a, current->data) == 0) {
+			return current->data;
+		}
+		current = current->pNext;
+	}
+}
+
 
 /// Insert item to the front of the list
 /// Return 0 if success
@@ -258,4 +247,101 @@ int L1List<T>::removeLast() {
 	return -1;
 }
 
-#endif //A01_LISTLIB_H 
+template <class T>
+void L1List<T>::clean() {
+	L1Item<T> * current = this->_pHead;
+	while (this->_pHead) {
+		this->_pHead = this->_pHead->pNext;
+		delete current;
+		current = this->_pHead;
+		this->_size--;
+	}
+	delete this->pCur;
+}
+
+template <class T>
+bool L1List<T>::find(T& a, int &idx) {
+	L1Item<T> * current = this->_pHead;
+	while (current) {
+		if (a == current->data) {
+			return true;
+		}
+		idx++;
+		current = current->pNext;
+	}
+	return false;
+}
+
+template <class T>
+int L1List<T>::insert(int i, T&a) {
+	L1Item<T> * current = this->_pHead;
+	int idx = 0;
+	while (current) {
+		if (i == idx) {
+			break;
+		}
+		current = current->pNext;
+		idx++;
+	}
+	L1Item<T> * pNew = new L1Item<T>(a);
+	pNew->pNext = current->pNext;
+	current->pNext = pNew;
+	this->_size++;
+	return idx;
+}
+
+template <class T>
+int L1List<T>::remove(int i) {
+	if (!(isEmpty()) && (i > 0) && (i < (int)_size)) {
+		L1Item<T>* p = _pHead;
+		L1Item<T>* ptr = NULL;
+		for (int count = 0; count < i - 1; count++)
+			p = p->pNext;
+		ptr = ptr->pNext;
+		p->pNext = ptr->pNext;
+		delete ptr;
+		return 0;
+	}
+	else return -1;
+}
+
+template <class T>
+T& L1List<T>::at(int i) {
+	if (this->_pHead != NULL) {
+		L1Item<T> * pRet = this->_pHead;
+		int idx = 0;
+		while (pRet) {
+			if (i != idx) {
+				pRet = pRet->pNext;
+				idx++;
+			}
+			else  return (pRet->data);
+		}
+	}
+	T ret;
+	return ret;
+}
+
+template <class T>
+T& L1List<T>::operator[](int i) {
+	return at(i);
+}
+
+template <class T>
+void L1List<T>::reverse() {
+	L1Item<T> * current = this->_pHead;
+	L1Item<T> * next = current->pNext;
+	while (next) {
+		L1Item<T> * pre = current;
+		current = next;
+		next = current->pNext;
+		current->pNext = pre;
+	}
+	this->_pHead->pNext = NULL;
+	this->_pHead = current;
+}
+
+
+
+
+#endif //A01_LISTLIB_H
